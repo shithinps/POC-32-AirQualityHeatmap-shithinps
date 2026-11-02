@@ -1,10 +1,10 @@
+import type { Metadata } from "next";
 import "./globals.css";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Air Quality Command Centre | Real Rails PoC 32",
   description: "Global Environmental Intelligence & Real-Time Monitoring Network",
 };
-
 export default function RootLayout({
   children,
 }: {
