@@ -7,68 +7,53 @@ interface TopbarProps {
   totalOperators?: number;
   totalCountries?: number;
   activeStations?: number;
-  onOpenAbout: () => void;
+  onOpenAbout?: () => void;
 }
 
 export function Topbar({
-  totalStations = 270719,
-  totalOperators,
-  totalCountries,
+  totalStations = 1800,
   activeStations,
-  onOpenAbout,
+  onOpenAbout = () => {},
 }: TopbarProps) {
-  const displayCount =
-    typeof activeStations === "number" && activeStations > 0
-      ? activeStations
-      : totalStations;
+  const displayCount = activeStations ?? totalStations;
 
   return (
-    <header className="relative z-30 flex h-14 w-full items-center justify-between border-b border-emerald-500/20 bg-[#060b13]/90 px-6 backdrop-blur-md">
-      {/* Brand & Heading */}
+    <header className="absolute top-0 left-0 right-0 z-30 h-14 bg-[#0a0e14]/80 backdrop-blur-md border-b border-[#1f2937] px-6 flex items-center justify-between">
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#10b981]" />
-          <h1 className="text-sm font-bold uppercase tracking-wider text-white">
-            EV Network Command Centre
-          </h1>
-        </div>
-        <span className="text-[10px] text-slate-500 font-mono tracking-widest hidden sm:inline-block">
-          ELECTRIC VEHICLE INTELLIGENCE NETWORK
+        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+        <h1 className="text-sm font-semibold tracking-wide text-white">
+          AIR QUALITY COMMAND CENTRE
+        </h1>
+        <span className="text-[10px] text-gray-400 font-mono hidden sm:inline">
+          GLOBAL MONITORING NETWORK
         </span>
       </div>
 
-      {/* Top Right Controls & Status */}
-      <div className="flex items-center gap-5">
-        {/* Network Status Indicator */}
-        <div className="flex items-center gap-2 border-r border-slate-800 pr-5">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          <div className="flex flex-col">
-            <span className="text-[9px] font-mono uppercase text-slate-500">
-              NETWORK
-            </span>
-            <span className="text-xs font-semibold tracking-wider text-emerald-400">
-              ONLINE
-            </span>
-          </div>
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-emerald-400" />
+          <span className="text-xs font-mono text-emerald-400 font-medium">
+            ONLINE
+          </span>
         </div>
 
-        {/* Dynamic Station Count */}
-        <div className="flex flex-col">
-          <span className="text-[9px] font-mono uppercase text-slate-500">
+        <div className="flex flex-col items-end">
+          <span className="text-[9px] font-mono uppercase text-gray-400">
             STATIONS
           </span>
-          <span className="text-xs font-bold font-mono tracking-wide text-white">
-            {displayCount.toLocaleString()}
+          <span
+            suppressHydrationWarning
+            className="text-xs font-bold font-mono tracking-wider text-white"
+          >
+            {displayCount?.toLocaleString()}
           </span>
         </div>
 
-        {/* System Metadata Modal Button */}
         <button
           onClick={onOpenAbout}
-          title="System Metadata"
-          className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-900/60 text-slate-300 transition hover:border-emerald-400 hover:text-emerald-400 hover:bg-slate-800"
+          className="text-xs px-2.5 py-1 rounded bg-[#161b22] hover:bg-[#1f2937] text-gray-300 border border-[#30363d] transition-colors"
         >
-          <span className="font-serif italic font-semibold text-xs">i</span>
+          Info
         </button>
       </div>
     </header>

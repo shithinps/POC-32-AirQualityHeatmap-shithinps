@@ -1,262 +1,220 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-type Filters = {
-  region: any[] | any;
-  operator: string;
+// Approximate center coordinates for country flying
+const COUNTRY_COORDINATES: Record<string, [number, number, number]> = {
+  India: [78.9629, 20.5937, 4.5],
+  China: [104.1954, 35.8617, 4],
+  Japan: [138.2529, 36.2048, 5],
+  "United Kingdom": [-3.4359, 55.3781, 5],
+  France: [2.2137, 46.2276, 5],
+  "United States": [-95.7129, 37.0902, 4],
+  Germany: [10.4515, 51.1657, 5],
+  Brazil: [-51.9253, -14.2350, 4],
+  Australia: [133.7751, -25.2744, 4],
+  "United Arab Emirates": [53.8478, 23.4241, 6],
+  Egypt: [30.8025, 26.8206, 5],
+  Singapore: [103.8198, 1.3521, 10],
+  "South Korea": [127.7669, 35.9078, 6],
+  Mexico: [-102.5528, 23.6345, 5],
 };
 
-type Props = {
+interface MapStageProps {
+  filters?: { country?: string; search?: string };
   onCountChange?: (count: number) => void;
-  filters?: Filters;
-  onStationClick?: (station: any) => void;
-};
+  onStationSelect?: (station: any) => void;
+  onSelectStation?: (station: any) => void;
+}
 
-export default function MapStage({ onCountChange, filters, onStationClick }: Props) {
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const debounceRef = useRef<any>(null);
-  const isLoadedRef = useRef(false);
-
-  const shouldMoveRef = useRef(false);
-  const isFilterModeRef = useRef(false);
-  const blockNextMoveRef = useRef(false);
-
-  const fetchStations = async () => {
-    const map = mapRef.current;
-    if (!map || !isLoadedRef.current) return;
-
-    const zoom = map.getZoom();
-    let params: URLSearchParams;
-
-    const isFiltered =
-      (Array.isArray(filters?.region) && filters.region.length > 0) ||
-      (!!filters?.operator && filters.operator !== "");
-
-    if (isFiltered && shouldMoveRef.current) {
-      params = new URLSearchParams({
-        min_lat: "-90",
-        max_lat: "90",
-        min_lng: "-180",
-        max_lng: "180",
-        zoom: Math.floor(zoom).toString(),
-      });
-    } else {
-      const bounds = map.getBounds();
-      if (!bounds) return;
-
-      params = new URLSearchParams({
-        min_lat: bounds.getSouth().toString(),
-        max_lat: bounds.getNorth().toString(),
-        min_lng: bounds.getWest().toString(),
-        max_lng: bounds.getEast().toString(),
-        zoom: Math.floor(zoom).toString(),
-      });
-    }
-
-    if (filters?.region) {
-      if (Array.isArray(filters.region)) {
-        filters.region.forEach((id) => {
-          if (id && id !== "ALL" && id !== "") {
-            params.append("country_id", id.toString());
-          }
-        });
-      } else if (filters.region !== "ALL" && filters.region !== "") {
-        params.append("country_id", filters.region.toString());
-      }
-    }
-
-    if (filters?.operator && filters.operator !== "") {
-      params.append("operator_id", filters.operator.toString());
-    }
-
-    const API = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-    const url = `${API}/api/stations/filtered?${params.toString()}`;
-
-    try {
-      const res = await fetch(url);
-      if (!res.ok) return;
-
-      const data = await res.json();
-      const featuresArray = data?.features || [];
-
-      const geojson: any = {
-        type: "FeatureCollection",
-        features: featuresArray.map((p: any) => ({
-          type: "Feature",
-          geometry: {
-            type: "Point",
-            coordinates: [p.lng, p.lat],
-          },
-          properties: p,
-        })),
-      };
-
-      const source = map.getSource("stations") as maplibregl.GeoJSONSource;
-      if (source) source.setData(geojson);
-
-      // Always report the current count back to Topbar and Dashboard
-      const totalCount = data?.total ?? featuresArray.length ?? 0;
-      onCountChange?.(totalCount);
-
-      // Camera Fly-To bounds handling
-      if (shouldMoveRef.current && (data.bounds || featuresArray.length > 0)) {
-        blockNextMoveRef.current = true;
-
-        if (
-          data.bounds &&
-          Array.isArray(data.bounds) &&
-          data.bounds.length === 4 &&
-          (data.bounds[0] !== 0 || data.bounds[2] !== 0)
-        ) {
-          const [minLng, minLat, maxLng, maxLat] = data.bounds;
-          map.fitBounds(
-            [
-              [minLng, minLat],
-              [maxLng, maxLat],
-            ],
-            { padding: 80, duration: 1200, maxZoom: 8 }
-          );
-        } else if (featuresArray.length > 0) {
-          let minLng = Infinity;
-          let maxLng = -Infinity;
-          let minLat = Infinity;
-          let maxLat = -Infinity;
-
-          featuresArray.forEach((p: any) => {
-            if (p.lng < minLng) minLng = p.lng;
-            if (p.lng > maxLng) maxLng = p.lng;
-            if (p.lat < minLat) minLat = p.lat;
-            if (p.lat > maxLat) maxLat = p.lat;
-          });
-
-          if (minLng === maxLng && minLat === maxLat) {
-            map.flyTo({
-              center: [minLng, minLat],
-              zoom: 6,
-              duration: 1200,
-            });
-          } else {
-            map.fitBounds(
-              [
-                [minLng, minLat],
-                [maxLng, maxLat],
-              ],
-              { padding: 90, duration: 1200, maxZoom: 8 }
-            );
-          }
-        }
-
-        shouldMoveRef.current = false;
-        return;
-      }
-    } catch (err) {
-      console.error("Error fetching stations:", err);
-    }
-  };
-
-  const debouncedFetch = () => {
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(fetchStations, 300);
-  };
+export default function MapStage({
+  filters,
+  onCountChange,
+  onStationSelect,
+  onSelectStation,
+}: MapStageProps) {
+  const mapContainer = useRef<HTMLDivElement | null>(null);
+  const map = useRef<maplibregl.Map | null>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (map.current || !mapContainer.current) return;
 
-    const map = new maplibregl.Map({
-      container: containerRef.current,
+    map.current = new maplibregl.Map({
+      container: mapContainer.current,
       style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
-      center: [10, 50],
-      zoom: 3.5,
+      center: [20, 20],
+      zoom: 1.8,
     });
 
-    mapRef.current = map;
-    map.addControl(new maplibregl.NavigationControl(), "top-right");
+    map.current.addControl(new maplibregl.NavigationControl(), "top-right");
 
-    map.on("load", () => {
-      isLoadedRef.current = true;
+    map.current.on("load", () => {
+      if (!map.current) return;
 
-      map.addSource("stations", {
+      map.current.addSource("air-quality", {
         type: "geojson",
-        data: { type: "FeatureCollection", features: [] },
+        data: "http://127.0.0.1:8000/api/geojson",
       });
 
-      // Emerald Green Nodes
-      map.addLayer({
-        id: "stations-layer",
-        type: "circle",
-        source: "stations",
+      // Air Quality Heatmap Layer
+      map.current.addLayer({
+        id: "air-quality-heat",
+        type: "heatmap",
+        source: "air-quality",
+        maxzoom: 9,
         paint: {
-          "circle-radius": 3.5,
-          "circle-color": "#10b981",
-          "circle-opacity": 0.85,
-          "circle-stroke-width": 1,
-          "circle-stroke-color": "#34d399",
-          "circle-stroke-opacity": 0.5,
+          "heatmap-weight": [
+            "interpolate",
+            ["linear"],
+            ["get", "intensity"],
+            0, 0,
+            50, 0.5,
+            150, 1,
+            250, 1.5,
+          ],
+          "heatmap-intensity": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            0, 1,
+            9, 3,
+          ],
+          "heatmap-color": [
+            "interpolate",
+            ["linear"],
+            ["heatmap-density"],
+            0, "rgba(0, 255, 128, 0)",
+            0.2, "#10b981",
+            0.4, "#f59e0b",
+            0.6, "#f97316",
+            0.8, "#ef4444",
+            1.0, "#7f1d1d",
+          ],
+          "heatmap-radius": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            0, 4,
+            9, 24,
+          ],
+          "heatmap-opacity": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            7, 1,
+            9, 0.4,
+          ],
         },
       });
 
-      map.on("click", "stations-layer", (e) => {
-        if (e.features && e.features[0] && onStationClick) {
-          onStationClick(e.features[0].properties);
-        }
+      // Individual Station Point Circles
+      map.current.addLayer({
+        id: "air-quality-point",
+        type: "circle",
+        source: "air-quality",
+        minzoom: 3,
+        paint: {
+          "circle-radius": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            3, 3,
+            8, 6,
+            12, 10,
+          ],
+          "circle-color": ["get", "color"],
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 1,
+          "circle-opacity": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            3, 0.4,
+            6, 0.8,
+            8, 1,
+          ],
+        },
       });
 
-      map.on("mouseenter", "stations-layer", () => {
-        map.getCanvas().style.cursor = "pointer";
+      fetch("http://127.0.0.1:8000/api/stats")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.total_stations && onCountChange) {
+            onCountChange(data.total_stations);
+          }
+        })
+        .catch(() => {});
+
+      map.current.on("click", "air-quality-point", (e) => {
+        if (!e.features || !e.features[0]) return;
+        const feature = e.features[0];
+        const props = feature.properties as any;
+        const coordinates = (feature.geometry as any).coordinates.slice();
+
+        const callback = onStationSelect || onSelectStation;
+        if (callback) callback(props);
+
+        new maplibregl.Popup()
+          .setLngLat(coordinates)
+          .setHTML(`
+            <div style="color: #111; padding: 4px; font-family: sans-serif;">
+              <h3 style="font-weight: bold; margin: 0 0 4px 0;">${props.name}</h3>
+              <p style="margin: 2px 0;"><strong>City:</strong> ${props.city}, ${props.country}</p>
+              <p style="margin: 2px 0;"><strong>PM2.5:</strong> ${props.pm25} µg/m³</p>
+              <p style="margin: 2px 0;"><strong>PM10:</strong> ${props.pm10} µg/m³</p>
+              <p style="margin: 2px 0;"><strong>Status:</strong> <span style="color: ${props.color}; font-weight: bold;">${props.category}</span></p>
+              <p style="margin: 2px 0;"><strong>Exposed Pop.:</strong> ${Number(props.population).toLocaleString()}</p>
+            </div>
+          `)
+          .addTo(map.current!);
       });
 
-      map.on("mouseleave", "stations-layer", () => {
-        map.getCanvas().style.cursor = "";
+      map.current.on("mouseenter", "air-quality-point", () => {
+        if (map.current) map.current.getCanvas().style.cursor = "pointer";
       });
-
-      fetchStations();
-    });
-
-    map.on("moveend", () => {
-      if (blockNextMoveRef.current) {
-        blockNextMoveRef.current = false;
-        return;
-      }
-      if (isFilterModeRef.current) return;
-      debouncedFetch();
-    });
-
-    map.on("zoomend", () => {
-      if (blockNextMoveRef.current) {
-        blockNextMoveRef.current = false;
-        return;
-      }
-      if (isFilterModeRef.current) return;
-      debouncedFetch();
+      map.current.on("mouseleave", "air-quality-point", () => {
+        if (map.current) map.current.getCanvas().style.cursor = "";
+      });
     });
 
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      map.remove();
+      map.current?.remove();
+      map.current = null;
     };
   }, []);
 
+  // Fly to country and filter features when country selection changes
   useEffect(() => {
-    if (isLoadedRef.current) {
-      const isFiltered =
-        (Array.isArray(filters?.region) && filters.region.length > 0) ||
-        (!!filters?.operator && filters.operator !== "");
+    if (!map.current || !map.current.isStyleLoaded()) return;
 
-      shouldMoveRef.current = true;
-      isFilterModeRef.current = isFiltered;
+    const country = filters?.country;
+    if (country && country !== "All") {
+      const target = COUNTRY_COORDINATES[country];
+      if (target) {
+        map.current.flyTo({
+          center: [target[0], target[1]],
+          zoom: target[2],
+          essential: true,
+          speed: 1.2,
+        });
+      }
 
-      fetchStations();
+      // Filter layer to that country
+      map.current.setFilter("air-quality-point", ["==", ["get", "country"], country]);
+      map.current.setFilter("air-quality-heat", ["==", ["get", "country"], country]);
+    } else {
+      // Reset filter and view
+      map.current.setFilter("air-quality-point", null);
+      map.current.setFilter("air-quality-heat", null);
+      map.current.flyTo({ center: [20, 20], zoom: 1.8, essential: true });
     }
-  }, [JSON.stringify(filters)]);
+  }, [filters?.country]);
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-full bg-[#020617]"
-    />
+    <div className="relative w-full h-full">
+      <div ref={mapContainer} className="w-full h-full min-h-[600px]" />
+    </div>
   );
 }

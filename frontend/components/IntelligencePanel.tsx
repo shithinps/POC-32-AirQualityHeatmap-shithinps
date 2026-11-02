@@ -1,174 +1,93 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 
-interface IntelligencePanelProps {
-  isOpen: boolean;
+type IntelligencePanelProps = {
+  station: any | null;
   onClose: () => void;
-  filters?: {
-    region?: any[] | any;
-    operator?: string;
-  };
-  metrics: {
-    total_stations: number;
-    operators: number;
-    countries: number;
-  };
-}
+};
 
-export function IntelligencePanel({
-  isOpen,
+export default function IntelligencePanel({
+  station,
   onClose,
-  filters,
-  metrics,
 }: IntelligencePanelProps) {
-  const API = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-  const [topOperators, setTopOperators] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  if (!station) return null;
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const fetchOperators = async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams();
-
-        if (filters?.region) {
-          if (Array.isArray(filters.region)) {
-            filters.region.forEach((id) => {
-              if (id && id !== "ALL" && id !== "") {
-                params.append("country_id", id.toString());
-              }
-            });
-          } else if (filters.region !== "ALL" && filters.region !== "") {
-            params.append("country_id", filters.region.toString());
-          }
-        }
-
-        if (filters?.operator && filters.operator !== "") {
-          params.append("operator_id", filters.operator.toString());
-        }
-
-        const queryStr = params.toString() ? `?${params.toString()}` : "";
-        const res = await fetch(`${API}/api/top-operators${queryStr}`);
-
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            setTopOperators(data.slice(0, 6));
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching filtered operators:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOperators();
-  }, [isOpen, filters, API]);
-
-  if (!isOpen) return null;
+  const props = station.properties || station;
 
   return (
-    <aside className="fixed top-0 right-0 z-40 h-screen w-80 sm:w-96 border-l border-emerald-500/20 bg-[#060b13]/95 backdrop-blur-md p-6 flex flex-col justify-between overflow-y-auto text-slate-200 shadow-2xl transition-all">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase">
-              SECTION A — RAIL INTELLIGENCE
-            </p>
-            <h2 className="text-lg font-bold text-white mt-1">
-              Global EV Charging Network
-            </h2>
-            <p className="text-xs text-slate-400">Supply Chain Rail · Data Layer</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-white transition p-1 text-sm"
-          >
-            ✕
-          </button>
+    <aside className="fixed top-16 right-6 z-40 w-80 bg-[#0B1117]/95 backdrop-blur-md border border-[#1F2937] rounded-lg p-5 shadow-2xl text-white">
+      <div className="flex items-center justify-between pb-3 border-b border-[#1F2937]">
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+          <h2 className="text-sm font-semibold tracking-wide">
+            Station Intelligence
+          </h2>
         </div>
-
-        {/* Section A: Metrics Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-lg border border-slate-800 bg-[#0b1320] p-3">
-            <p className="text-base font-bold text-emerald-400">
-              {metrics.total_stations.toLocaleString()}
-            </p>
-            <p className="text-[10px] uppercase font-mono text-slate-400">Total Stations</p>
-          </div>
-          <div className="rounded-lg border border-slate-800 bg-[#0b1320] p-3">
-            <p className="text-base font-bold text-emerald-400">
-              {metrics.operators.toLocaleString()}
-            </p>
-            <p className="text-[10px] uppercase font-mono text-slate-400">Operators</p>
-          </div>
-          <div className="rounded-lg border border-slate-800 bg-[#0b1320] p-3">
-            <p className="text-base font-bold text-emerald-400">
-              {metrics.countries.toLocaleString()}
-            </p>
-            <p className="text-[10px] uppercase font-mono text-slate-400">Countries</p>
-          </div>
-          <div className="rounded-lg border border-slate-800 bg-[#0b1320] p-3">
-            <p className="text-base font-bold text-emerald-400">99.4%</p>
-            <p className="text-[10px] uppercase font-mono text-slate-400">Network Density</p>
-          </div>
-        </div>
-
-        {/* Section B: Narrative */}
-        <div className="space-y-2 border-t border-slate-800/80 pt-4">
-          <p className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase">
-            SECTION B — WHY THIS MATTERS
-          </p>
-          <p className="text-xs leading-relaxed text-slate-300">
-            EV charging infrastructure forms the operational backbone of the electric mobility ecosystem. Without sufficient network density, adoption slows regardless of vehicle affordability or policy incentives. High-density regions accelerate usage through convenience and reliability.
-          </p>
-        </div>
-
-        {/* Section C: Live Dynamic Top Operators */}
-        <div className="space-y-3 border-t border-slate-800/80 pt-4">
-          <div className="flex items-center justify-between">
-            <p className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase">
-              SECTION C — WHO CONTROLS THE RAIL
-            </p>
-            {loading && (
-              <span className="text-[10px] font-mono text-emerald-400 animate-pulse">
-                Updating...
-              </span>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            {topOperators.length > 0 ? (
-              topOperators.map((op, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between text-xs py-1.5 border-b border-slate-800/50"
-                >
-                  <span className="text-slate-300 truncate max-w-[200px]">
-                    {op.operator_name || "Independent"}
-                  </span>
-                  <span className="font-mono text-emerald-400 font-semibold">
-                    {op.count?.toLocaleString() || 0}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className="flex items-center justify-between text-xs py-1 text-slate-500">
-                <span>No specific operators found</span>
-                <span className="font-mono">0</span>
-              </div>
-            )}
-          </div>
-        </div>
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-white text-xs px-2 py-0.5 rounded border border-[#1F2937] hover:bg-[#1F2937] transition"
+        >
+          ✕
+        </button>
       </div>
 
-      <div className="border-t border-slate-800/80 pt-4 text-[10px] font-mono tracking-widest text-slate-500 uppercase text-center">
-        REAL RAILS · EV INTELLIGENCE
+      <div className="mt-4 space-y-3 text-xs">
+        <div>
+          <span className="text-gray-400 block text-[10px] uppercase font-mono">
+            Station Name
+          </span>
+          <p className="font-medium text-gray-200">
+            {props.station_name || props.name || "Unknown Station"}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#1F2937]/50">
+          <div>
+            <span className="text-gray-400 block text-[10px] uppercase font-mono">
+              Country
+            </span>
+            <p className="font-semibold text-gray-200">
+              {props.country || "N/A"}
+            </p>
+          </div>
+          <div>
+            <span className="text-gray-400 block text-[10px] uppercase font-mono">
+              City
+            </span>
+            <p className="font-semibold text-gray-200">
+              {props.city || "N/A"}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-[#1F2937]/50">
+          <div className="bg-[#161B22] p-2 rounded border border-[#1F2937]">
+            <span className="text-gray-400 block text-[9px] uppercase font-mono">
+              PM2.5 (µg/m³)
+            </span>
+            <p className="text-sm font-mono font-bold text-amber-400">
+              {props.pm25 !== undefined ? props.pm25 : "N/A"}
+            </p>
+          </div>
+          <div className="bg-[#161B22] p-2 rounded border border-[#1F2937]">
+            <span className="text-gray-400 block text-[9px] uppercase font-mono">
+              PM10 (µg/m³)
+            </span>
+            <p className="text-sm font-mono font-bold text-sky-400">
+              {props.pm10 !== undefined ? props.pm10 : "N/A"}
+            </p>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-[#1F2937]/50">
+          <span className="text-gray-400 block text-[10px] uppercase font-mono">
+            AQI Category
+          </span>
+          <p className="font-medium text-emerald-400">
+            {props.aqi_category || props.status || "Moderate"}
+          </p>
+        </div>
       </div>
     </aside>
   );
