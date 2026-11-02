@@ -7,73 +7,81 @@ interface AboutModalProps {
   onClose: () => void;
 }
 
-export function AboutModal({ isOpen, onClose }: AboutModalProps) {
+export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="relative w-full max-w-[340px] rounded-2xl border border-emerald-500/30 bg-[#060b13] p-6 shadow-2xl">
-        {/* Top Header */}
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-[10px] font-mono tracking-widest text-emerald-400 uppercase">
-              SYSTEM METADATA
-            </p>
-            <h2 className="text-lg font-bold text-white mt-0.5">
-              EV Network Command Centre
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+      <div className="relative w-full max-w-2xl bg-[#0d1117] border border-[#30363d] rounded-xl shadow-2xl p-6 text-gray-200 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between pb-4 border-b border-[#21262d]">
+          <div className="flex items-center gap-3">
+            <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
+            <h2 className="text-base font-semibold text-white tracking-wide">
+              Global Air Quality Command Centre — PoC 32
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white transition text-sm pt-0.5"
+            className="text-gray-400 hover:text-white px-2.5 py-1 rounded border border-[#30363d] hover:bg-[#21262d] transition text-xs font-mono"
           >
-            ✕
+            ESC / CLOSE
           </button>
         </div>
 
-        {/* Compact Stack of Cards */}
-        <div className="mt-5 space-y-2.5">
-          <div className="rounded-xl border border-slate-800/80 bg-[#0b1320] px-4 py-2.5">
-            <p className="text-[9px] font-mono tracking-wider text-slate-500 uppercase">
-              ARCHITECT
-            </p>
-            <p className="text-xs font-medium text-slate-200 mt-0.5">
-              shithin ps
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-slate-800/80 bg-[#0b1320] px-4 py-2.5">
-            <p className="text-[9px] font-mono tracking-wider text-slate-500 uppercase">
-              BATCH
-            </p>
-            <p className="text-xs font-medium text-slate-200 mt-0.5">
-              Batch 8 Interns
+        {/* Content Body */}
+        <div className="mt-5 space-y-5 text-xs text-gray-300 leading-relaxed max-h-[70vh] overflow-y-auto pr-2">
+          {/* Section 1: Purpose & Why This Matters */}
+          <div>
+            <h3 className="text-emerald-400 font-mono uppercase tracking-wider text-[11px] mb-1">
+              01. Purpose & Health Impact
+            </h3>
+            <p>
+              Fine particulate matter (PM2.5 and PM10) penetrates deep into lung tissue and enters the bloodstream. Sustained exposure exceeding WHO guidelines poses critical cardiovascular and respiratory hazards. This platform translates raw telemetry into actionable geographic intelligence to identify high-risk exposure zones in real time.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-800/80 bg-[#0b1320] px-4 py-2.5">
-            <p className="text-[9px] font-mono tracking-wider text-slate-500 uppercase">
-              STACK
-            </p>
-            <p className="text-xs font-medium text-slate-200 mt-0.5">
-              Next.js · FastAPI · Tailwind CSS · Map Engine
+          {/* Section 2: Data Governance & Ownership */}
+          <div>
+            <h3 className="text-emerald-400 font-mono uppercase tracking-wider text-[11px] mb-1">
+              02. Network Architecture & Governance
+            </h3>
+            <p>
+              Telemetry across 1,800 active monitoring nodes is ingested from validated global environmental aggregators, national environmental protection agencies, and open-sensor networks. Telemetry is geocoded and served via a FastAPI backend feeding a MapLibre geospatial frontend.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-800/80 bg-[#0b1320] px-4 py-2.5">
-            <p className="text-[9px] font-mono tracking-wider text-slate-500 uppercase">
-              DATA SOURCE
-            </p>
-            <p className="text-xs font-medium text-slate-200 mt-0.5">
-              OpenChargeMap
-            </p>
+          {/* Section 3: Decision Framework */}
+          <div>
+            <h3 className="text-emerald-400 font-mono uppercase tracking-wider text-[11px] mb-2">
+              03. AQI Classification & Operational Decision Protocol
+            </h3>
+            <div className="grid grid-cols-2 gap-2 font-mono text-[10px]">
+              <div className="p-2.5 rounded bg-[#161b22] border border-emerald-500/30">
+                <span className="text-emerald-400 font-bold block">0 - 50 AQI (Good)</span>
+                Air quality is satisfactory. No restrictions on outdoor activity.
+              </div>
+              <div className="p-2.5 rounded bg-[#161b22] border border-yellow-500/30">
+                <span className="text-yellow-400 font-bold block">51 - 100 AQI (Moderate)</span>
+                Acceptable quality; sensitive individuals should monitor prolonged exposure.
+              </div>
+              <div className="p-2.5 rounded bg-[#161b22] border border-orange-500/30">
+                <span className="text-orange-400 font-bold block">101 - 200 AQI (Unhealthy)</span>
+                Public health advisory. Sensitive cohorts require indoor air filtration.
+              </div>
+              <div className="p-2.5 rounded bg-[#161b22] border border-red-500/30">
+                <span className="text-red-400 font-bold block">200+ AQI (Hazardous)</span>
+                Emergency condition. Direct industrial alert triggers and school advisories.
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Footer */}
-        <p className="text-center text-[9px] font-mono tracking-widest text-slate-600 uppercase mt-5">
-          REAL RAILS · EV INTELLIGENCE PLATFORM
-        </p>
+        <div className="mt-6 pt-3 border-t border-[#21262d] flex justify-between items-center text-[10px] font-mono text-gray-500">
+          <span>Real Rails Batch 8 — Engineering PoC 32</span>
+          <span>FastAPI + Next.js + MapLibre GL</span>
+        </div>
       </div>
     </div>
   );

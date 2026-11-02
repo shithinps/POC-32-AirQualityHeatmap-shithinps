@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "EV Rail Intelligence",
-  description: "Global EV Charging Network",
+  title: "Air Quality Command Centre | Real Rails PoC 32",
+  description: "Global Environmental Intelligence & Real-Time Monitoring Network",
 };
 
 export default function RootLayout({

@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { Topbar } from "@/components/Topbar";
 import FilterPanel from "@/components/Filterpanel";
 import IntelligencePanel from "@/components/IntelligencePanel";
+import AboutModal from "@/components/AboutModal";
 
 const MapStage = dynamic(() => import("@/components/MapStage"), {
   ssr: false,
@@ -25,6 +26,7 @@ export default function Page() {
   });
   const [selectedStation, setSelectedStation] = useState<any | null>(null);
   const [isIntelligenceOpen, setIsIntelligenceOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -54,7 +56,7 @@ export default function Page() {
       <Topbar
         totalStations={metrics.total_stations}
         activeStations={activeCount ?? undefined}
-        onOpenAbout={() => {}}
+        onOpenAbout={() => setIsAboutOpen(true)}
       />
 
       {/* Filter Control Bar Overlay */}
@@ -88,6 +90,12 @@ export default function Page() {
           onClose={() => setIsIntelligenceOpen(false)}
         />
       )}
+
+      {/* About & Governance Modal */}
+      <AboutModal
+        isOpen={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
+      />
     </main>
   );
 }
