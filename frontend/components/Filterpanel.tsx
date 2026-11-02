@@ -11,7 +11,7 @@ interface FilterPanelProps {
   onChange: (filters: any) => void;
 }
 
-export default function FilterPanel({ filters, onChange }: FilterPanelProps) {
+export default function FilterPanel({ filters, onChange }: FilterPanelProps): React.JSX.Element {
   const [isExporting, setIsExporting] = useState(false);
 
   const countries = [
@@ -39,37 +39,61 @@ export default function FilterPanel({ filters, onChange }: FilterPanelProps) {
 
       let features = data.features || [];
       if (filters.country) {
-        features = features.filter((f: any) =>
-          f.properties?.country?.toLowerCase() === filters.country.toLowerCase()
+        features = features.filter(
+          (f: any) =>
+            f.properties?.country?.toLowerCase() === filters.country.toLowerCase()
         );
       }
 
-      const rows = [
-        ["Station ID", "Station Name", "City", "Country", "Longitude", "Latitude", "PM2.5", "PM10", "AQI Category"],
-        ...features.map((f: any) => [
-          f.properties?.id ?? f.properties?.station_id ?? "N/A",
-          `"${(f.properties?.station_name ?? f.properties?.name ?? "Unknown").replace(/"/g, '""')}"`,
-          `"${(f.properties?.city ?? "").replace(/"/g, '""')}"`,
-          `"${(f.properties?.country ?? "").replace(/"/g, '""')}"`,
-          f.geometry?.coordinates?.[0] ?? "",
-          f.geometry?.coordinates?.[1] ?? "",
-          f.properties?.pm25 ?? "",
-          f.properties?.pm10 ?? "",
-          `"${f.properties?.aqi_category ?? ""}"`,
-        ]),
+      const headers = [
+        "Station ID",
+        "Station Name",
+        "City",
+        "Country",
+        "Longitude",
+        "Latitude",
+        "PM2.5 (ug/m3)",
+        "PM10 (ug/m3)",
+        "AQI Category",
       ];
 
-      const csvContent = "data:text/csv;charset=utf-8," + rows.map((e) => e.join(",")).join("\n");
-      const encodedUri = encodeURI(csvContent);
+      const escapeCsv = (val: any) => {
+        if (val === null || val === undefined) return '""';
+        const str = String(val).replace(/"/g, '""');
+        return `"${str}"`;
+      };
+
+      const rows = features.map((f: any) => {
+        const p = f.properties || {};
+        const coords = f.geometry?.coordinates || ["", ""];
+        return [
+          escapeCsv(p.id ?? p.station_id ?? "N/A"),
+          escapeCsv(p.station_name ?? p.name ?? "Unknown Node"),
+          escapeCsv(p.city ?? "N/A"),
+          escapeCsv(p.country ?? "N/A"),
+          coords[0],
+          coords[1],
+          p.pm25 ?? 0,
+          p.pm10 ?? 0,
+          escapeCsv(p.aqi_category ?? "Moderate"),
+        ].join(",");
+      });
+
+      const csvContent = [headers.join(","), ...rows].join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
+      link.href = url;
       link.setAttribute(
         "download",
-        `air_quality_telemetry_${filters.country ? filters.country.toLowerCase() : "global"}.csv`
+        `air_quality_telemetry_${
+          filters.country ? filters.country.toLowerCase() : "global"
+        }.csv`
       );
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Export failed:", err);
     } finally {
