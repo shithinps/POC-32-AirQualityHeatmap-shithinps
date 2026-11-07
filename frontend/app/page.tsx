@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-import { Topbar } from "@/components/Topbar";
-import { FilterPanel, FilterState } from "@/components/FilterPanel";
-import IntelligencePanel from "@/components/IntelligencePanel";
-import { AboutModal } from "@/components/AboutModal";
+import { Topbar } from "../components/Topbar";
+import FilterPanel from "../components/FilterPanel";
+import IntelligencePanel from "../components/IntelligencePanel";
+import AboutModal from "../components/AboutModal";
 
-const MapStage = dynamic(() => import("@/components/MapStage"), {
+const MapStage = dynamic(() => import("../components/MapStage"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center bg-[#0a0e14] text-gray-400 font-mono text-sm">
@@ -17,11 +17,10 @@ const MapStage = dynamic(() => import("@/components/MapStage"), {
 });
 
 export default function Home() {
-  const [filters, setFilters] = useState<FilterState>({
-    country: "All",
-    status: "All",
-    showStations: true,
-    showHeatmap: true,
+  const [filters, setFilters] = useState<any>({
+    country: "",
+    operator: "",
+    region: [],
   });
 
   const [metrics, setMetrics] = useState<{
