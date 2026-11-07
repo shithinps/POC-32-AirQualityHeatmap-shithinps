@@ -22,7 +22,7 @@ export function Topbar({
       <div className="flex items-center gap-3">
         <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
         <h1 className="text-sm font-semibold tracking-wide text-white">
-          AIR QUALITY COMMAND CENTRE
+          AIR QUALITY HEATMAP
         </h1>
         <span className="text-[10px] text-gray-400 font-mono hidden sm:inline">
           GLOBAL MONITORING NETWORK

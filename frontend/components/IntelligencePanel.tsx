@@ -1,27 +1,40 @@
-"use client";
+﻿"use client";
 
 import React from "react";
+import { Activity, ShieldAlert, CheckCircle, Info, Wind } from "lucide-react";
 
-type IntelligencePanelProps = {
-  station: any | null;
-  onClose: () => void;
-};
+interface IntelligencePanelProps {
+  station: any;
+  onClose?: () => void;
+}
 
 export default function IntelligencePanel({
   station,
-  onClose,
 }: IntelligencePanelProps) {
-  if (!station) return null;
+  if (!station) {
+    return (
+      <aside className="w-full h-full bg-[#0B1117] border-l border-[#1F2937] p-5 text-white flex flex-col items-center justify-center text-center space-y-4">
+        <div className="w-12 h-12 rounded-full bg-[#161B22] border border-[#1F2937] flex items-center justify-center text-gray-400">
+          <Wind className="w-6 h-6 animate-pulse text-emerald-400" />
+        </div>
+        <div>
+          <h2 className="text-sm font-mono uppercase tracking-wider text-gray-200">
+            Intelligence Stream
+          </h2>
+          <p className="text-xs text-gray-400 mt-1 max-w-[220px]">
+            Select any monitoring station on the heatmap to view live telemetry and analytical diagnostics.
+          </p>
+        </div>
+      </aside>
+    );
+  }
 
   const props = station.properties || station;
   const pm25Val = typeof props.pm25 === "number" ? props.pm25 : 42;
   const pm10Val = typeof props.pm10 === "number" ? props.pm10 : 68;
-
-  // WHO guideline threshold evaluation
   const whoExceeded = pm25Val > 15;
   const aqiLabel = props.aqi_category || (pm25Val > 55 ? "Unhealthy" : pm25Val > 35 ? "Moderate" : "Good");
 
-  // Simulated 6-hour historical trend bars for visualization
   const trendPoints = [
     Math.max(10, Math.round(pm25Val * 0.75)),
     Math.max(12, Math.round(pm25Val * 0.85)),
@@ -33,7 +46,7 @@ export default function IntelligencePanel({
   const maxTrend = Math.max(...trendPoints, 60);
 
   return (
-    <aside className="fixed top-16 right-6 z-40 w-84 bg-[#0B1117]/95 backdrop-blur-md border border-[#1F2937] rounded-xl p-5 shadow-2xl text-white font-sans transition-all">
+    <aside className="w-full h-full bg-[#0B1117] border-l border-[#1F2937] p-5 text-white font-sans overflow-y-auto">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-[#1F2937]">
         <div className="flex items-center gap-2">
@@ -42,12 +55,6 @@ export default function IntelligencePanel({
             Station Telemetry Dossier
           </h2>
         </div>
-        <button
-          onClick={onClose}
-          className="text-gray-400 hover:text-white text-xs px-2 py-0.5 rounded border border-[#1F2937] hover:bg-[#1F2937] transition font-mono"
-        >
-          ✕
-        </button>
       </div>
 
       <div className="mt-4 space-y-4 text-xs">
@@ -71,80 +78,76 @@ export default function IntelligencePanel({
               PM2.5 Concentration
             </span>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className="text-base font-mono font-bold text-amber-400">
+              <span className="text-lg font-bold font-mono text-emerald-400">
                 {pm25Val}
               </span>
-              <span className="text-[10px] font-mono text-gray-400">µg/m³</span>
+              <span className="text-[10px] text-gray-400">µg/m³</span>
             </div>
-            <span className="text-[9px] text-gray-500 font-mono block mt-1">
-              WHO Limit: 15 µg/m³
-            </span>
           </div>
 
           <div className="bg-[#161B22] p-2.5 rounded-lg border border-[#1F2937]">
             <span className="text-gray-400 block text-[9px] uppercase font-mono">
-              PM10 Concentration
+              PM10 Index
             </span>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className="text-base font-mono font-bold text-sky-400">
+              <span className="text-lg font-bold font-mono text-cyan-400">
                 {pm10Val}
               </span>
-              <span className="text-[10px] font-mono text-gray-400">µg/m³</span>
+              <span className="text-[10px] text-gray-400">µg/m³</span>
             </div>
-            <span className="text-[9px] text-gray-500 font-mono block mt-1">
-              WHO Limit: 45 µg/m³
-            </span>
           </div>
         </div>
 
-        {/* 6-Hour Trend Sparkline */}
-        <div className="bg-[#161B22] p-2.5 rounded-lg border border-[#1F2937]">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[9px] uppercase font-mono text-gray-400">
-              6-Hour PM2.5 Progression
-            </span>
-            <span className="text-[9px] font-mono text-emerald-400">Telemetry Active</span>
-          </div>
-          <div className="flex items-end gap-1.5 h-12 pt-2">
-            {trendPoints.map((val, idx) => {
-              const heightPct = Math.min(100, Math.round((val / maxTrend) * 100));
-              return (
-                <div key={idx} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                  <div
-                    style={{ height: `${heightPct}%` }}
-                    className={`w-full rounded-t-sm transition-all duration-300 ${
-                      val > 35 ? "bg-amber-400/80" : "bg-emerald-400/80"
-                    }`}
-                  />
-                  <span className="text-[8px] font-mono text-gray-500">
-                    -{5 - idx}h
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Actionable Health Insight */}
-        <div className={`p-2.5 rounded-lg border text-[11px] leading-relaxed ${
-          whoExceeded
-            ? "bg-amber-950/20 border-amber-500/30 text-amber-200/90"
-            : "bg-emerald-950/20 border-emerald-500/30 text-emerald-200/90"
-        }`}>
-          <div className="font-semibold font-mono text-[10px] uppercase mb-0.5">
-            {whoExceeded ? "⚠ Health Threshold Advisory" : "✔ Standard Baseline Condition"}
-          </div>
-          {whoExceeded
-            ? "Current particulate levels exceed WHO 24h limits. Vulnerable groups should limit prolonged outdoor exertion."
-            : "Particulate density remains compliant with standard WHO air quality benchmarks."}
-        </div>
-
-        {/* Category Badge */}
-        <div className="flex items-center justify-between pt-2 border-t border-[#1F2937] text-[10px] font-mono">
-          <span className="text-gray-400">Current Status:</span>
-          <span className="font-bold text-amber-400 uppercase tracking-wide">
-            {aqiLabel}
+        {/* AQI Status Evaluation */}
+        <div className="bg-[#161B22] p-3 rounded-lg border border-[#1F2937]">
+          <span className="text-gray-400 block text-[9px] uppercase font-mono">
+            AQI Classification
           </span>
+          <div className="flex items-center gap-2 mt-1">
+            <span
+              className={`px-2 py-0.5 rounded text-[10px] font-semibold tracking-wide uppercase ${
+                aqiLabel === "Good"
+                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                  : aqiLabel === "Moderate"
+                  ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                  : "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+              }`}
+            >
+              {aqiLabel}
+            </span>
+          </div>
+        </div>
+
+        {/* 6-Hour Trend Visualizer */}
+        <div className="bg-[#161B22] p-3 rounded-lg border border-[#1F2937]">
+          <span className="text-gray-400 block text-[9px] uppercase font-mono mb-2">
+            6-Hour Telemetry Trend (PM2.5)
+          </span>
+          <div className="flex items-end gap-1.5 h-16 pt-2">
+            {trendPoints.map((val, idx) => (
+              <div key={idx} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                <div
+                  className="w-full bg-emerald-500/40 rounded-t border-t border-emerald-400/80 transition-all duration-300"
+                  style={{ height: `${(val / maxTrend) * 100}%` }}
+                />
+                <span className="text-[8px] font-mono text-gray-400">{val}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* WHO Guideline Compliance */}
+        <div className="flex items-center gap-2.5 p-2.5 rounded-lg bg-[#161B22] border border-[#1F2937]">
+          {whoExceeded ? (
+            <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
+          ) : (
+            <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+          )}
+          <p className="text-[10px] text-gray-300 leading-tight">
+            {whoExceeded
+              ? "Elevated particulate threshold exceeds standard WHO recommended parameters."
+              : "Particulate density remains compliant with standard WHO air quality benchmarks."}
+          </p>
         </div>
       </div>
     </aside>

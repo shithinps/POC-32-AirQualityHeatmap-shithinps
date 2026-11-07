@@ -1,32 +1,39 @@
-"use client";
+﻿"use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Topbar } from "@/components/Topbar";
-import FilterPanel from "@/components/Filterpanel";
+import { FilterPanel, FilterState } from "@/components/FilterPanel";
 import IntelligencePanel from "@/components/IntelligencePanel";
-import AboutModal from "@/components/AboutModal";
+import { AboutModal } from "@/components/AboutModal";
 
 const MapStage = dynamic(() => import("@/components/MapStage"), {
   ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-[#0a0e14] text-gray-400 font-mono text-sm">
+      Initializing Geospatial Map Engine...
+    </div>
+  ),
 });
 
-export default function Page() {
-  const [mounted, setMounted] = useState(false);
-  const [filters, setFilters] = useState<any>({
-    country: "",
-    operator: "",
-    region: [],
+export default function Home() {
+  const [filters, setFilters] = useState<FilterState>({
+    country: "All",
+    status: "All",
+    showStations: true,
+    showHeatmap: true,
   });
+
+  const [metrics, setMetrics] = useState<{
+    total_stations?: number;
+    active_stations?: number;
+    countries_covered?: number;
+  }>({});
+
   const [activeCount, setActiveCount] = useState<number | null>(null);
-  const [metrics, setMetrics] = useState({
-    total_stations: 1800,
-    avg_pm25: 0,
-    total_population_exposed: 0,
-  });
-  const [selectedStation, setSelectedStation] = useState<any | null>(null);
-  const [isIntelligenceOpen, setIsIntelligenceOpen] = useState(false);
+  const [selectedStation, setSelectedStation] = useState<any>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -44,14 +51,13 @@ export default function Page() {
 
   const handleStationClick = (station: any) => {
     setSelectedStation(station);
-    setIsIntelligenceOpen(true);
   };
 
   const countValue = activeCount ?? metrics.total_stations;
-  const formattedCount = mounted ? countValue.toLocaleString() : String(countValue);
+  const formattedCount = mounted ? countValue?.toLocaleString() : String(countValue || "---");
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-[#0a0e14] text-white">
+    <main className="relative w-screen h-screen overflow-hidden bg-[#0a0e14] flex flex-col">
       {/* Top Header Navigation */}
       <Topbar
         totalStations={metrics.total_stations}
@@ -59,37 +65,40 @@ export default function Page() {
         onOpenAbout={() => setIsAboutOpen(true)}
       />
 
-      {/* Filter Control Bar Overlay */}
-      <div className="absolute top-16 left-6 z-20">
-        <FilterPanel filters={filters} onChange={setFilters} />
-      </div>
+      {/* 70/30 Main Content Workspace */}
+      <div className="relative flex-1 w-full flex overflow-hidden pt-14">
+        {/* 70% Visualization (Map Area) */}
+        <div className="relative w-[70%] h-full">
+          {/* Filter Control Bar Overlay */}
+          <div className="absolute top-4 left-6 z-20">
+            <FilterPanel filters={filters} onChange={setFilters} />
+          </div>
 
-      {/* Main Map Visualization */}
-      <div className="w-full h-full">
-        <MapStage
-          filters={filters}
-          onCountChange={(count: number) => setActiveCount(count)}
-          onStationSelect={handleStationClick}
-        />
-      </div>
+          <MapStage
+            filters={filters}
+            onCountChange={(count: number) => setActiveCount(count)}
+            onStationSelect={handleStationClick}
+          />
 
-      {/* Active Station Counter Footer Widget */}
-      <div className="absolute bottom-6 right-6 z-20 bg-[#0B1117]/90 backdrop-blur-md border border-[#1F2937] px-4 py-2.5 rounded-lg flex flex-col items-end shadow-xl">
-        <span className="text-[10px] font-mono uppercase text-gray-400 tracking-wider">
-          ACTIVE STATIONS
-        </span>
-        <span className="font-mono text-sm font-bold text-emerald-400">
-          {formattedCount}
-        </span>
-      </div>
+          {/* Active Station Counter Footer Widget */}
+          <div className="absolute bottom-6 right-6 z-20 bg-[#0B1117]/90 backdrop-blur-md border border-[#1F2937] px-4 py-2.5 rounded-lg flex flex-col items-end shadow-xl">
+            <span className="text-[10px] font-mono uppercase text-gray-400 tracking-wider">
+              ACTIVE STATIONS
+            </span>
+            <span className="font-mono text-sm font-bold text-emerald-400">
+              {formattedCount}
+            </span>
+          </div>
+        </div>
 
-      {/* Side Intelligence / Detail Drawer */}
-      {isIntelligenceOpen && (
-        <IntelligencePanel
-          station={selectedStation}
-          onClose={() => setIsIntelligenceOpen(false)}
-        />
-      )}
+        {/* 30% Intelligence Workspace */}
+        <div className="w-[30%] h-full">
+          <IntelligencePanel
+            station={selectedStation}
+            onClose={() => setSelectedStation(null)}
+          />
+        </div>
+      </div>
 
       {/* About & Governance Modal */}
       <AboutModal
