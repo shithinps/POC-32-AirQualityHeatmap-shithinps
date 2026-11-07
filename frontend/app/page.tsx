@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Topbar } from "../components/Topbar";
-import FilterPanel from "../components/FilterPanel";
+import Filterpanel from "../components/Filterpanel";
 import IntelligencePanel from "../components/IntelligencePanel";
 import AboutModal from "../components/AboutModal";
 
@@ -70,7 +70,7 @@ export default function Home() {
         <div className="relative w-[70%] h-full">
           {/* Filter Control Bar Overlay */}
           <div className="absolute top-4 left-6 z-20">
-            <FilterPanel filters={filters} onChange={setFilters} />
+            <Filterpanel filters={filters} onChange={setFilters} />
           </div>
 
           <MapStage
