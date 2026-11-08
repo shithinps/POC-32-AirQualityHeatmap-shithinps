@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
+// @ts-ignore
 import "maplibre-gl/dist/maplibre-gl.css";
 
 // Approximate center coordinates for country flying
@@ -37,6 +38,16 @@ export default function MapStage({
 }: MapStageProps) {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<maplibregl.Map | null>(null);
+  const geojsonRef = useRef<any>(null);
+
+  // Store callbacks in refs to prevent re-render loops
+  const onCountChangeRef = useRef(onCountChange);
+  const onStationSelectRef = useRef(onStationSelect || onSelectStation);
+
+  useEffect(() => {
+    onCountChangeRef.current = onCountChange;
+    onStationSelectRef.current = onStationSelect || onSelectStation;
+  }, [onCountChange, onStationSelect, onSelectStation]);
 
   useEffect(() => {
     if (map.current || !mapContainer.current) return;
@@ -46,106 +57,116 @@ export default function MapStage({
       style: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
       center: [20, 20],
       zoom: 1.8,
+      attributionControl: false,
     });
 
     map.current.addControl(new maplibregl.NavigationControl(), "top-right");
 
-    map.current.on("load", () => {
+    map.current.on("load", async () => {
       if (!map.current) return;
 
-      map.current.addSource("air-quality", {
-        type: "geojson",
-        data: "http://127.0.0.1:8000/api/geojson",
-      });
+      try {
+        const res = await fetch("http://127.0.0.1:8000/api/geojson");
+        const geojsonData = await res.json();
+        geojsonRef.current = geojsonData;
 
-      // Air Quality Heatmap Layer
-      map.current.addLayer({
-        id: "air-quality-heat",
-        type: "heatmap",
-        source: "air-quality",
-        maxzoom: 9,
-        paint: {
-          "heatmap-weight": [
-            "interpolate",
-            ["linear"],
-            ["get", "intensity"],
-            0, 0,
-            50, 0.5,
-            150, 1,
-            250, 1.5,
-          ],
-          "heatmap-intensity": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            0, 1,
-            9, 3,
-          ],
-          "heatmap-color": [
-            "interpolate",
-            ["linear"],
-            ["heatmap-density"],
-            0, "rgba(0, 255, 128, 0)",
-            0.2, "#10b981",
-            0.4, "#f59e0b",
-            0.6, "#f97316",
-            0.8, "#ef4444",
-            1.0, "#7f1d1d",
-          ],
-          "heatmap-radius": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            0, 4,
-            9, 24,
-          ],
-          "heatmap-opacity": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            7, 1,
-            9, 0.4,
-          ],
-        },
-      });
+        if (!map.current) return;
 
-      // Individual Station Point Circles
-      map.current.addLayer({
-        id: "air-quality-point",
-        type: "circle",
-        source: "air-quality",
-        minzoom: 3,
-        paint: {
-          "circle-radius": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            3, 3,
-            8, 6,
-            12, 10,
-          ],
-          "circle-color": ["get", "color"],
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 1,
-          "circle-opacity": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            3, 0.4,
-            6, 0.8,
-            8, 1,
-          ],
-        },
-      });
+        map.current.addSource("air-quality", {
+          type: "geojson",
+          data: geojsonData,
+        });
 
-      fetch("http://127.0.0.1:8000/api/stats")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.total_stations && onCountChange) {
-            onCountChange(data.total_stations);
-          }
-        })
-        .catch(() => {});
+        // Air Quality Heatmap Layer
+        map.current.addLayer({
+          id: "air-quality-heat",
+          type: "heatmap",
+          source: "air-quality",
+          maxzoom: 9,
+          paint: {
+            "heatmap-weight": [
+              "interpolate",
+              ["linear"],
+              ["get", "intensity"],
+              0, 0,
+              50, 0.5,
+              150, 1,
+              250, 1.5,
+            ],
+            "heatmap-intensity": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              0, 1.5,
+              9, 3,
+            ],
+            "heatmap-color": [
+              "interpolate",
+              ["linear"],
+              ["heatmap-density"],
+              0, "rgba(0, 255, 128, 0)",
+              0.2, "#10b981",
+              0.4, "#f59e0b",
+              0.6, "#f97316",
+              0.8, "#ef4444",
+              1.0, "#7f1d1d",
+            ],
+            "heatmap-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              0, 12,
+              4, 20,
+              9, 30,
+            ],
+            "heatmap-opacity": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              0, 0.9,
+              7, 0.9,
+              9, 0.4,
+            ],
+          },
+        });
+
+        // Individual Station Point Circles
+        map.current.addLayer({
+          id: "air-quality-point",
+          type: "circle",
+          source: "air-quality",
+          minzoom: 1,
+          paint: {
+            "circle-radius": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              1, 2.5,
+              3, 3.5,
+              8, 6,
+              12, 10,
+            ],
+            "circle-color": ["get", "color"],
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 1,
+            "circle-opacity": [
+              "interpolate",
+              ["linear"],
+              ["zoom"],
+              1, 0.6,
+              3, 0.7,
+              6, 0.9,
+              8, 1,
+            ],
+          },
+        });
+
+        if (geojsonData?.features && onCountChangeRef.current) {
+          onCountChangeRef.current(geojsonData.features.length);
+        }
+      } catch (err) {
+        console.error("Error loading GeoJSON:", err);
+      }
 
       map.current.on("click", "air-quality-point", (e) => {
         if (!e.features || !e.features[0]) return;
@@ -153,8 +174,9 @@ export default function MapStage({
         const props = feature.properties as any;
         const coordinates = (feature.geometry as any).coordinates.slice();
 
-        const callback = onStationSelect || onSelectStation;
-        if (callback) callback(props);
+        if (onStationSelectRef.current) {
+          onStationSelectRef.current(props);
+        }
 
         new maplibregl.Popup()
           .setLngLat(coordinates)
@@ -188,6 +210,7 @@ export default function MapStage({
   // Fly to country and filter features when country selection changes
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
+    if (!map.current.getLayer("air-quality-point") || !map.current.getLayer("air-quality-heat")) return;
 
     const country = filters?.country;
     if (country && country !== "All") {
@@ -204,11 +227,22 @@ export default function MapStage({
       // Filter layer to that country
       map.current.setFilter("air-quality-point", ["==", ["get", "country"], country]);
       map.current.setFilter("air-quality-heat", ["==", ["get", "country"], country]);
+
+      if (geojsonRef.current?.features && onCountChangeRef.current) {
+        const filteredCount = geojsonRef.current.features.filter(
+          (f: any) => f.properties?.country === country
+        ).length;
+        onCountChangeRef.current(filteredCount);
+      }
     } else {
       // Reset filter and view
       map.current.setFilter("air-quality-point", null);
       map.current.setFilter("air-quality-heat", null);
       map.current.flyTo({ center: [20, 20], zoom: 1.8, essential: true });
+
+      if (geojsonRef.current?.features && onCountChangeRef.current) {
+        onCountChangeRef.current(geojsonRef.current.features.length);
+      }
     }
   }, [filters?.country]);
 
