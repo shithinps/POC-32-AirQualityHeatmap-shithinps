@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
@@ -48,6 +48,24 @@ export default function Home() {
       .catch((err) => console.error("Error fetching stats:", err));
   }, []);
 
+  const handleFilterChange = (newFilters: any) => {
+    setFilters(newFilters);
+    if (newFilters.country && newFilters.country !== "All") {
+      fetch(`http://127.0.0.1:8000/api/stations?country=${encodeURIComponent(newFilters.country)}`)
+        .then((res) => res.json())
+        .then((resData) => {
+          if (resData?.data && resData.data.length > 0) {
+            setSelectedStation(resData.data[0]);
+          } else {
+            setSelectedStation(null);
+          }
+        })
+        .catch(() => setSelectedStation(null));
+    } else {
+      setSelectedStation(null);
+    }
+  };
+
   const handleStationClick = (station: any) => {
     setSelectedStation(station);
   };
@@ -57,20 +75,16 @@ export default function Home() {
 
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-[#0a0e14] flex flex-col">
-      {/* Top Header Navigation */}
       <Topbar
         totalStations={metrics.total_stations}
         activeStations={activeCount ?? undefined}
         onOpenAbout={() => setIsAboutOpen(true)}
       />
 
-      {/* 70/30 Main Content Workspace */}
       <div className="relative flex-1 w-full flex overflow-hidden pt-14">
-        {/* 70% Visualization (Map Area) */}
         <div className="relative w-[70%] h-full">
-          {/* Filter Control Bar Overlay */}
           <div className="absolute top-4 left-6 z-20">
-            <Filterpanel filters={filters} onChange={setFilters} />
+            <Filterpanel filters={filters} onChange={handleFilterChange} />
           </div>
 
           <MapStage
@@ -79,7 +93,6 @@ export default function Home() {
             onStationSelect={handleStationClick}
           />
 
-          {/* Active Station Counter Footer Widget */}
           <div className="absolute bottom-6 right-6 z-20 bg-[#0B1117]/90 backdrop-blur-md border border-[#1F2937] px-4 py-2.5 rounded-lg flex flex-col items-end shadow-xl">
             <span className="text-[10px] font-mono uppercase text-gray-400 tracking-wider">
               ACTIVE STATIONS
@@ -90,7 +103,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 30% Intelligence Workspace */}
         <div className="w-[30%] h-full">
           <IntelligencePanel
             station={selectedStation}
@@ -99,7 +111,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* About & Governance Modal */}
       <AboutModal
         isOpen={isAboutOpen}
         onClose={() => setIsAboutOpen(false)}

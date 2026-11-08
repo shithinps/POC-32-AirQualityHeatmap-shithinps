@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React from "react";
 
@@ -18,7 +18,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
           <div className="flex items-center gap-3">
             <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
             <h2 className="text-base font-semibold text-white tracking-wide">
-              Global Air Quality Heatmap — PoC 32
+              Air Quality Heatmap
             </h2>
           </div>
           <button
@@ -31,7 +31,6 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
 
         {/* Content Body */}
         <div className="mt-5 space-y-5 text-xs text-gray-300 leading-relaxed max-h-[70vh] overflow-y-auto pr-2">
-          {/* Section 1: Purpose & Why This Matters */}
           <div>
             <h3 className="text-emerald-400 font-mono uppercase tracking-wider text-[11px] mb-1">
               01. Purpose & Health Impact
@@ -41,7 +40,6 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
             </p>
           </div>
 
-          {/* Section 2: Data Governance & Ownership */}
           <div>
             <h3 className="text-emerald-400 font-mono uppercase tracking-wider text-[11px] mb-1">
               02. Network Architecture & Governance
@@ -51,7 +49,6 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
             </p>
           </div>
 
-          {/* Section 3: Decision Framework */}
           <div>
             <h3 className="text-emerald-400 font-mono uppercase tracking-wider text-[11px] mb-2">
               03. AQI Classification & Operational Decision Protocol
