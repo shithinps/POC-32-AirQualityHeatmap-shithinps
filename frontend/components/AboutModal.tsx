@@ -18,7 +18,7 @@ export default function AboutModal({ isOpen, onClose }: AboutModalProps) {
           <div className="flex items-center gap-3">
             <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
             <h2 className="text-base font-semibold text-white tracking-wide">
-              Global Air Quality Command Centre — PoC 32
+              Global Air Quality Heatmap — PoC 32
             </h2>
           </div>
           <button

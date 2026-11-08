@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+// @ts-ignore
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Air Quality Command Centre | Real Rails PoC 32",
+  title: "Air Quality Heatmap | Real Rails PoC 32",
   description: "Global Environmental Intelligence & Real-Time Monitoring Network",
 };
+
 export default function RootLayout({
   children,
 }: {
